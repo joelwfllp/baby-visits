@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Come Meet the Baby!</title>
+<style>
+  :root {
+    --warm: #fef9f0;
+    --peach: #fce4cc;
+    --coral: #e8927c;
+    --sage: #a8c5a0;
+    --sage-light: #d4e6cf;
+    --blue: #7bafd4;
+    --blue-light: #c8dff0;
+    --block-red: #e57373;
+    --block-red-light: #ffcdd2;
+    --text: #4a4a4a;
+    --text-light: #888;
+    --white: #ffffff;
+    --border: #e8e0d8;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--warm);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  header {
+    text-align: center;
+    padding: 40px 20px 30px;
+  }
+
+  header h1 {
+    font-size: 2.2em;
+    color: var(--coral);
+    font-weight: normal;
+    margin-bottom: 8px;
+  }
+
+  header p {
+    color: var(--text-light);
+    font-size: 1.1em;
+    line-height: 1.5;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  .card h2 {
+    font-size: 1.3em;
+    color: var(--coral);
+    font-weight: normal;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Calendar */
+  .calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .calendar-nav button {
+    background: var(--peach);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1em;
+    color: var(--text);
+    transition: background 0.2s;
+  }
+
+  .calendar-nav button:hover { background: var(--coral); color: white; }
+
+  .calendar-nav h3 {
+    font-size: 1.2em;
+    font-weight: normal;
+    color: var(--text);
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .calendar-grid .day-header {
+    text-align: center;
+    font-size: 0.8em;
+    color: var(--text-light);
+    padding: 8px 0;
+    font-variant: small-caps;
+  }
+
+  .calendar-grid .day {
+    text-align: center;
+    padding: 10px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95em;
+    position: relative;
+    transition: all 0.15s;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .calendar-grid .day:hover:not(.empty):not(.past) {
+    background: var(--peach);
+  }
+
+  .calendar-grid .day.empty { cursor: default; }
+  .calendar-grid .day.past { color: #ccc; cursor: default; }
+  .calendar-grid .day.today { font-weight: bold; text-decoration: underline; }
+
+  .calendar-grid .day.blocked {
+    background: var(--block-red-light);
+    color: var(--block-red);
+    font-weight: bold;
+  }
+
+  .calendar-grid .day.has-visit {
+    background: var(--blue-light);
+    color: #2c6e99;
+  }
+
+  .calendar-grid .day.selected {
+    background: var(--sage);
+    color: white;
+    font-weight: bold;
+  }
+
+  .calendar-grid .day .dot-row {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 2px;
+  }
+
+  .calendar-grid .day .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--blue);
+  }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+    color: var(--text-light);
+  }
+
+  .legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+  }
+
+  /* Form */
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.95em;
+    color: var(--text);
+  }
+
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1em;
+    color: var(--text);
+    background: var(--white);
+  }
+
+  .form-group textarea { resize: vertical; min-height: 70px; }
+
+  .selected-dates {
+    background: var(--sage-light);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.9em;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .btn {
+    background: var(--coral);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-family: inherit;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn:hover { background: #d4795f; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--sage);
+  }
+
+  .btn-secondary:hover { background: #8fb587; }
+
+  .btn-small {
+    padding: 6px 14px;
+    font-size: 0.85em;
+  }
+
+  .btn-danger {
+    background: var(--block-red);
+  }
+
+  .btn-danger:hover { background: #c62828; }
+
+  /* Visits list */
+  .visit-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .visit-item:last-child { border-bottom: none; }
+
+  .visit-name {
+    font-weight: bold;
+    color: var(--blue);
+  }
+
+  .visit-dates {
+    font-size: 0.9em;
+    color: var(--text-light);
+  }
+
+  .visit-notes {
+    font-size: 0.85em;
+    color: var(--text-light);
+    font-style: italic;
+    margin-top: 2px;
+  }
+
+  .no-visits {
+    color: var(--text-light);
+    font-style: italic;
+    padding: 10px 0;
+  }
+
+  /* Admin */
+  .admin-toggle {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .admin-toggle button {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-family: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .admin-bar {
+    background: #fff3e0;
+    border: 1px solid #ffe0b2;
+    border-radius: 8px;
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .admin-bar span { font-size: 0.9em; }
+
+  .password-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .password-modal .modal-box {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+  }
+
+  .password-modal h3 {
+    margin-bottom: 16px;
+    font-weight: normal;
+    color: var(--coral);
+  }
+
+  .password-modal input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1em;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--sage);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: inherit;
+    box-shadow: var(--shadow);
+    z-index: 200;
+    animation: fadeInUp 0.3s, fadeOut 0.3s 2.5s forwards;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  @keyframes fadeOut {
+    to { opacity: 0; }
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .container { padding: 12px; }
+    header { padding: 24px 12px 18px; }
+    header h1 { font-size: 1.6em; }
+    .card { padding: 18px; }
+    .calendar-grid .day { padding: 8px 2px; font-size: 0.85em; min-height: 36px; }
+    .legend { gap: 12px; }
+    .visit-item { flex-direction: column; align-items: flex-start; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Come Meet the Baby!</h1>
+    <p>Pick a date and let us know when you'd like to visit.<br>
+    We can't wait to see you!</p>
+  </header>
+
+  <!-- Calendar -->
+  <div class="card">
+    <h2>Calendar</h2>
+    <div class="calendar-nav">
+      <button onclick="changeMonth(-1)">&larr; Prev</button>
+      <h3 id="monthLabel"></h3>
+      <button onclick="changeMonth(1)">Next &rarr;</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--sage)"></div> Your selection</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--blue-light)"></div> Someone's visiting</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--block-red-light)"></div> Not available</div>
+    </div>
+  </div>
+
+  <!-- Visit Form -->
+  <div class="card" id="requestCard">
+    <h2>Calendar Your Visit</h2>
+    <p id="selectionHint" style="color:var(--text-light); font-size:0.9em; margin-bottom:14px;">
+      Click the dates you're planning to visit, then add your name below.
+    </p>
+    <div class="selected-dates" id="selectedDatesDisplay" style="display:none;"></div>
+    <div class="form-group">
+      <label for="visitorName">Your name</label>
+      <input type="text" id="visitorName" placeholder="e.g. Grandma & Grandpa">
+    </div>
+    <div class="form-group">
+      <label for="visitorNotes">Notes <span style="color:var(--text-light); font-size:0.85em;">(optional)</span></label>
+      <textarea id="visitorNotes" placeholder="Anything we should know? Approximate time, dietary needs, etc."></textarea>
+    </div>
+    <button class="btn" id="submitBtn" onclick="submitVisit()" disabled>Add to Calendar</button>
+  </div>
+
+  <!-- Upcoming Visits -->
+  <div class="card">
+    <h2>Who's Coming</h2>
+    <div id="visitsList"><p class="no-visits">No visits on the calendar yet. Be the first!</p></div>
+  </div>
+
+  <!-- Admin toggle -->
+  <div class="admin-toggle">
+    <button onclick="toggleAdmin()" id="adminToggleBtn">Parents' Admin</button>
+  </div>
+
+  <!-- Admin panel (hidden by default) -->
+  <div class="card" id="adminPanel" style="display:none;">
+    <h2>Admin Panel</h2>
+    <div class="admin-bar">
+      <span>Click dates on the calendar to block/unblock them.</span>
+      <button class="btn btn-small btn-danger" onclick="toggleAdmin()">Exit Admin</button>
+    </div>
+    <div id="adminVisitsList"></div>
+  </div>
+</div>
+
+<!-- Password Modal -->
+<div class="password-modal" id="passwordModal" style="display:none;">
+  <div class="modal-box">
+    <h3>Parents' Login</h3>
+    <input type="password" id="adminPassword" placeholder="Enter password" onkeyup="if(event.key==='Enter')checkPassword()">
+    <br>
+    <button class="btn" onclick="checkPassword()">Enter</button>
+    <br><br>
+    <button style="background:none;border:none;color:var(--text-light);cursor:pointer;font-family:inherit;font-size:0.85em;" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<script>
+// ============================================================
+// CONFIGURATION — Fill in your Supabase project details below
+// ============================================================
+const SUPABASE_URL = 'https://srxmzxdyujzbclyzpfzh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyeG16eGR5dWp6YmNseXpwZnpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MDM0NTUsImV4cCI6MjA4NzM3OTQ1NX0.NGVgQZfmRYvrp39QvZKF1YfA6HSGncAye4PQTWRYfk4';
+
+// Admin password — change this to whatever you and your wife want
+const ADMIN_PASSWORD = 'baby2026';
+// ============================================================
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// State
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+let selectedDates = new Set();
+let blockedDates = {};   // { "2026-03-15": true }
+let visits = [];         // [{ id, name, dates, notes, created_at }]
+let isAdmin = false;
+
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// ---- Load Data ----
+async function loadBlockedDates() {
+  const { data, error } = await supabase.from('blocked_dates').select('*');
+  if (error) { console.error('Error loading blocked dates:', error); return; }
+  blockedDates = {};
+  (data || []).forEach(row => { blockedDates[row.date] = row.id; });
+  renderCalendar();
+}
+
+async function loadVisits() {
+  const { data, error } = await supabase.from('visits').select('*').order('created_at', { ascending: true });
+  if (error) { console.error('Error loading visits:', error); return; }
+  visits = data || [];
+  renderCalendar();
+  renderVisits();
+  if (isAdmin) renderAdminVisits();
+}
+
+// ---- Real-time Subscriptions ----
+supabase.channel('blocked_dates_changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'blocked_dates' }, () => loadBlockedDates())
+  .subscribe();
+
+supabase.channel('visits_changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'visits' }, () => loadVisits())
+  .subscribe();
+
+// ---- Calendar ----
+function changeMonth(dir) {
+  currentMonth += dir;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar();
+}
+
+function dateStr(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function formatDateNice(ds) {
+  const [y, m, d] = ds.split('-').map(Number);
+  return `${MONTHS[m-1]} ${d}`;
+}
+
+function getVisitDatesMap() {
+  const map = {};
+  visits.forEach(v => {
+    (v.dates || []).forEach(d => {
+      if (!map[d]) map[d] = [];
+      map[d].push(v.name);
+    });
+  });
+  return map;
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  const label = document.getElementById('monthLabel');
+  label.textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const visitMap = getVisitDatesMap();
+
+  let html = DAYS.map(d => `<div class="day-header">${d}</div>`).join('');
+
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div class="day empty"></div>';
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = dateStr(currentYear, currentMonth, d);
+    const thisDate = new Date(currentYear, currentMonth, d);
+    const isPast = thisDate < today;
+    const isToday = thisDate.getTime() === today.getTime();
+    const isBlocked = !!blockedDates[ds];
+    const visitors = visitMap[ds] || [];
+    const isSelected = selectedDates.has(ds);
+
+    let cls = 'day';
+    if (isPast) cls += ' past';
+    if (isToday) cls += ' today';
+    if (isBlocked) cls += ' blocked';
+    else if (isSelected) cls += ' selected';
+    else if (visitors.length > 0) cls += ' has-visit';
+
+    let title = '';
+    if (isBlocked) title = 'Not available';
+    else if (visitors.length > 0) title = 'Visiting: ' + visitors.join(', ');
+
+    let dots = '';
+    if (visitors.length > 0 && !isBlocked && !isSelected) {
+      dots = '<div class="dot-row">' + visitors.slice(0,3).map(() => '<div class="dot"></div>').join('') + '</div>';
+    }
+
+    html += `<div class="${cls}" title="${title}" onclick="clickDate('${ds}', ${isPast}, ${isBlocked})">${d}${dots}</div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+async function clickDate(ds, isPast, isBlocked) {
+  if (isPast) return;
+
+  if (isAdmin) {
+    if (blockedDates[ds]) {
+      await supabase.from('blocked_dates').delete().eq('id', blockedDates[ds]);
+    } else {
+      await supabase.from('blocked_dates').insert({ date: ds });
+    }
+    await loadBlockedDates();
+    return;
+  }
+
+  if (isBlocked) return;
+
+  if (selectedDates.has(ds)) {
+    selectedDates.delete(ds);
+  } else {
+    selectedDates.add(ds);
+  }
+
+  renderCalendar();
+  updateSelectedDisplay();
+}
+
+function updateSelectedDisplay() {
+  const display = document.getElementById('selectedDatesDisplay');
+  const hint = document.getElementById('selectionHint');
+  const btn = document.getElementById('submitBtn');
+
+  if (selectedDates.size === 0) {
+    display.style.display = 'none';
+    hint.style.display = 'block';
+    btn.disabled = true;
+  } else {
+    const sorted = Array.from(selectedDates).sort();
+    display.style.display = 'block';
+    hint.style.display = 'none';
+    display.innerHTML = '<strong>Selected:</strong> ' + sorted.map(formatDateNice).join(', ');
+    btn.disabled = false;
+  }
+}
+
+// ---- Submit Visit ----
+async function submitVisit() {
+  const name = document.getElementById('visitorName').value.trim();
+  const notes = document.getElementById('visitorNotes').value.trim();
+
+  if (!name) { showToast('Please enter your name!'); return; }
+  if (selectedDates.size === 0) { showToast('Please select at least one date!'); return; }
+
+  const sorted = Array.from(selectedDates).sort();
+
+  const { error } = await supabase.from('visits').insert({
+    name: name,
+    dates: sorted,
+    notes: notes || null
+  });
+
+  if (error) {
+    showToast('Something went wrong. Please try again.');
+    console.error(error);
+    return;
+  }
+
+  showToast("You're on the calendar! We can't wait to see you!");
+  selectedDates.clear();
+  document.getElementById('visitorName').value = '';
+  document.getElementById('visitorNotes').value = '';
+  updateSelectedDisplay();
+  await loadVisits();
+}
+
+// ---- Render Visits ----
+function renderVisits() {
+  const list = document.getElementById('visitsList');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const todayStr = dateStr(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const upcoming = visits
+    .filter(v => {
+      const lastDate = [...(v.dates || [])].sort().pop();
+      return lastDate >= todayStr;
+    })
+    .sort((a, b) => {
+      const aFirst = [...(a.dates || [])].sort()[0];
+      const bFirst = [...(b.dates || [])].sort()[0];
+      return aFirst.localeCompare(bFirst);
+    });
+
+  if (upcoming.length === 0) {
+    list.innerHTML = '<p class="no-visits">No visits on the calendar yet.</p>';
+    return;
+  }
+
+  list.innerHTML = upcoming.map(v => {
+    const dates = [...(v.dates || [])].sort().map(formatDateNice).join(', ');
+    const notes = v.notes ? `<div class="visit-notes">${escapeHtml(v.notes)}</div>` : '';
+    return `<div class="visit-item">
+      <div>
+        <div class="visit-name">${escapeHtml(v.name)}</div>
+        <div class="visit-dates">${dates}</div>
+        ${notes}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---- Admin ----
+function toggleAdmin() {
+  if (isAdmin) {
+    isAdmin = false;
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('adminToggleBtn').textContent = "Parents' Admin";
+    document.getElementById('requestCard').style.display = 'block';
+    renderCalendar();
+    return;
+  }
+  document.getElementById('passwordModal').style.display = 'flex';
+  document.getElementById('adminPassword').value = '';
+  document.getElementById('adminPassword').focus();
+}
+
+function checkPassword() {
+  const pw = document.getElementById('adminPassword').value;
+  if (pw === ADMIN_PASSWORD) {
+    isAdmin = true;
+    document.getElementById('passwordModal').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    document.getElementById('adminToggleBtn').textContent = 'Exit Admin';
+    document.getElementById('requestCard').style.display = 'none';
+    selectedDates.clear();
+    updateSelectedDisplay();
+    renderCalendar();
+    renderAdminVisits();
+  } else {
+    showToast('Wrong password!');
+  }
+}
+
+function closeModal() {
+  document.getElementById('passwordModal').style.display = 'none';
+}
+
+function renderAdminVisits() {
+  const list = document.getElementById('adminVisitsList');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const todayStr = dateStr(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const all = [...visits].sort((a, b) => {
+    const aFirst = [...(a.dates || [])].sort()[0] || '';
+    const bFirst = [...(b.dates || [])].sort()[0] || '';
+    return aFirst.localeCompare(bFirst);
+  });
+
+  if (all.length === 0) {
+    list.innerHTML = '<p class="no-visits">No visits yet.</p>';
+    return;
+  }
+
+  list.innerHTML = '<h3 style="font-weight:normal;margin-bottom:12px;color:var(--text-light)">All Visits</h3>' +
+    all.map(v => {
+      const dates = [...(v.dates || [])].sort().map(formatDateNice).join(', ');
+      const notes = v.notes ? `<div class="visit-notes">${escapeHtml(v.notes)}</div>` : '';
+      const isPast = [...(v.dates || [])].sort().pop() < todayStr;
+      const style = isPast ? 'opacity:0.5;' : '';
+      return `<div class="visit-item" style="${style}">
+        <div>
+          <div class="visit-name">${escapeHtml(v.name)}</div>
+          <div class="visit-dates">${dates}</div>
+          ${notes}
+        </div>
+        <button class="btn btn-small btn-danger" onclick="removeVisit(${v.id})">Remove</button>
+      </div>`;
+    }).join('');
+}
+
+async function removeVisit(id) {
+  if (confirm('Remove this visit?')) {
+    await supabase.from('visits').delete().eq('id', id);
+    await loadVisits();
+  }
+}
+
+// ---- Helpers ----
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// ---- Init ----
+renderCalendar();
+updateSelectedDisplay();
+loadBlockedDates();
+loadVisits();
+</script>
+
+</body>
+</html>
