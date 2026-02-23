@@ -422,7 +422,7 @@
   <div class="card" id="requestCard">
     <h2>Calendar Your Visit</h2>
     <p id="selectionHint" style="color:var(--text-light); font-size:0.9em; margin-bottom:14px;">
-      Click the dates you're planning to visit, then add your name below.
+      Click your first date, then click your last date to select the range. Then add your name below.
     </p>
     <div class="selected-dates" id="selectedDatesDisplay" style="display:none;"></div>
     <div class="form-group">
@@ -493,6 +493,7 @@ let selectedDates = new Set();
 let blockedDates = {};   // { "2026-03-15": true }
 let visits = [];         // [{ id, name, dates, notes, created_at }]
 let isAdmin = false;
+let rangeStart = null; // for click-to-select-range
 
 const MONTHS = ['January','February','March','April','May','June',
                 'July','August','September','October','November','December'];
@@ -617,10 +618,23 @@ async function clickDate(ds, isPast, isBlocked) {
 
   if (isBlocked) return;
 
-  if (selectedDates.has(ds)) {
-    selectedDates.delete(ds);
-  } else {
+  // Range selection: first click sets start, second click fills the range
+  if (rangeStart === null) {
+    rangeStart = ds;
+    selectedDates.clear();
     selectedDates.add(ds);
+  } else {
+    const start = rangeStart < ds ? rangeStart : ds;
+    const end = rangeStart < ds ? ds : rangeStart;
+    selectedDates.clear();
+    let cur = new Date(start + 'T00:00:00');
+    const endDate = new Date(end + 'T00:00:00');
+    while (cur <= endDate) {
+      const s = dateStr(cur.getFullYear(), cur.getMonth(), cur.getDate());
+      if (!blockedDates[s]) selectedDates.add(s);
+      cur.setDate(cur.getDate() + 1);
+    }
+    rangeStart = null;
   }
 
   renderCalendar();
