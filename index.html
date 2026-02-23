@@ -484,7 +484,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const ADMIN_PASSWORD = 'baby2026';
 // ============================================================
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // State
 let currentMonth = new Date().getMonth();
@@ -500,7 +500,7 @@ const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 // ---- Load Data ----
 async function loadBlockedDates() {
-  const { data, error } = await supabase.from('blocked_dates').select('*');
+  const { data, error } = await sb.from('blocked_dates').select('*');
   if (error) { console.error('Error loading blocked dates:', error); return; }
   blockedDates = {};
   (data || []).forEach(row => { blockedDates[row.date] = row.id; });
@@ -508,7 +508,7 @@ async function loadBlockedDates() {
 }
 
 async function loadVisits() {
-  const { data, error } = await supabase.from('visits').select('*').order('created_at', { ascending: true });
+  const { data, error } = await sb.from('visits').select('*').order('created_at', { ascending: true });
   if (error) { console.error('Error loading visits:', error); return; }
   visits = data || [];
   renderCalendar();
@@ -517,11 +517,11 @@ async function loadVisits() {
 }
 
 // ---- Real-time Subscriptions ----
-supabase.channel('blocked_dates_changes')
+sb.channel('blocked_dates_changes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'blocked_dates' }, () => loadBlockedDates())
   .subscribe();
 
-supabase.channel('visits_changes')
+sb.channel('visits_changes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'visits' }, () => loadVisits())
   .subscribe();
 
@@ -607,9 +607,9 @@ async function clickDate(ds, isPast, isBlocked) {
 
   if (isAdmin) {
     if (blockedDates[ds]) {
-      await supabase.from('blocked_dates').delete().eq('id', blockedDates[ds]);
+      await sb.from('blocked_dates').delete().eq('id', blockedDates[ds]);
     } else {
-      await supabase.from('blocked_dates').insert({ date: ds });
+      await sb.from('blocked_dates').insert({ date: ds });
     }
     await loadBlockedDates();
     return;
@@ -655,7 +655,7 @@ async function submitVisit() {
 
   const sorted = Array.from(selectedDates).sort();
 
-  const { error } = await supabase.from('visits').insert({
+  const { error } = await sb.from('visits').insert({
     name: name,
     dates: sorted,
     notes: notes || null
@@ -783,7 +783,7 @@ function renderAdminVisits() {
 
 async function removeVisit(id) {
   if (confirm('Remove this visit?')) {
-    await supabase.from('visits').delete().eq('id', id);
+    await sb.from('visits').delete().eq('id', id);
     await loadVisits();
   }
 }
